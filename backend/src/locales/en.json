@@ -1,0 +1,38 @@
+{
+  "start": "Hey!\nWith the help of me, you can control a bot\nthat will help you play the\n'Rise of Kingdoms: Lost Crusade'\n\nAttention! You require the MemuEmulator!",
+  "help": "You can read more about bot commands on web site",
+  "ap_choose": "How many bottles should the bot use?",
+
+  "commands_title": "Choose a command",
+  "command_added": "Commands has been added successfully. Do you want to add another command?",
+  "queue_title": "Your command queue: ",
+  "instruction": "FIRST LAUNCH INSTRUCTION",
+
+  "download_memu": "Download MemuEmulator",
+  "download_dist": "DOWNLOAD THE BOT",
+
+  "settings_btn": "Settings",
+  "commands_btn": "BOT CONTROL",
+  "queue_commands_btn": "Queued commands",
+  "get_id_btn": "Get user ID",
+  "help_btn": "Help",
+  "lang_btn": "Язык",
+  "more": "More info",
+  "back": "Back to start menu",
+  "feedback_btn": "Feedback",
+
+  "feedback_info": "Answer to this message (Right button click -> Answer) and type your qestion or review",
+
+  "yes": "Yes",
+  "no": "No",
+
+  "cn_launch": "LAUNCH",
+  "cn_stop": "STOP",
+  "cn_screen": "SCREEN",
+  "cn_ap": "AP",
+  "cn_logs": "REQUEST LOGS",
+
+  "error_command": "An error occurred while adding command",
+  "error_unknown_command": "Unknown command:",
+  "error_internal": "Internal server error"
+}
