@@ -62,6 +62,7 @@ export async function order(req: Request, res: Response): Promise<void> {
     try {
         LOG.info("Запрос на сохранение заказа. Начало");
         const item = req.body;
+        LOG.info(JSON.stringify(item));
         if (item.telegram_id && item.order_date && item.data) {
             const foundItem = await Models.DinnerOrderModel.findOne({
                 where: {
@@ -100,11 +101,12 @@ export async function setDinnerDays(req: Request, res: Response): Promise<void> 
     try {
         LOG.info("Запрос на установку дней обеда. Начало");
         const days = req.body.days;
+        LOG.info(JSON.stringify(days));
         for (const day of days) {
             const formattedDay = moment(day, "DD.MM.YYYY").format("YYYY-MM-DD");
             if (!moment(day, "DD.MM.YYYY").isValid()) {
                 LOG.info(`Невалидная дата - ${day}`);
-                break;
+                continue;
             }
             LOG.info(`Пытаемся установить день обеда ${formattedDay}`);
             if (!await Models.DinnerDayModel.findOne({where: {dinner_date: formattedDay}})) {
