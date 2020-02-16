@@ -1,6 +1,6 @@
 import {AbstractTelegramBotHandler} from "./abstractTelegramBotHandler";
 import TelegramBot from 'node-telegram-bot-api';
-import Sequelize from 'sequelize';
+import {Op} from "sequelize";
 import {DinnerUserModel, Models} from "../models";
 import {CommonUtils} from "../utils/commonUtils";
 import moment from "moment";
@@ -71,7 +71,7 @@ export class DinnerBotHandler extends AbstractTelegramBotHandler {
 
     private async showExact(text: string[], chatId: number, clientId: number) {
         text.shift();
-        const nameOpt = {[Sequelize.Op.like]: `%${text.join(" ").toLowerCase()}%`};
+        const nameOpt = {[Op.like]: `%${text.join(" ").toLowerCase()}%`};
         const found = await Models.DinnerRecord.findAll({where: {eater: clientId, name: nameOpt}});
         let result = ``;
         this.LOG_INFO(JSON.stringify(found));

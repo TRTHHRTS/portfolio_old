@@ -5,7 +5,6 @@ import {getItem, removeItem, setItem} from 'node-persist';
 import {Models} from "../models";
 import * as fs from "fs";
 import {getDefaultSettings} from "../utils/robDefaultSettings";
-import {isCommandLegal} from "../utils/commands";
 
 // Минимальное и максимальное значение одноразового кода
 const MIN_CODE_VALUE = 10000;
