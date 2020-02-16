@@ -55,11 +55,11 @@ export const i18n = require("i18n");
             try {
                 LOG.info(`Крон задача напоминания. Начало`);
                 const currentDate = moment(new Date());
-                const users = await Models.DinnerUserSettings.findAll({where: {need_notify: true}, raw: true});
+                const users = await Models.DinnerUserSettings.findAll({raw: true});
                 const nextDinnerDay = await Models.DinnerDayModel.findOne({where: {dinner_date: {[Op.gt]: currentDate.format("YYYY-MM-DD")}}});
                 if (users) {
                     for (let user of users) {
-                        if (user.when_notify === CommonUtils.currentHour()) {
+                        if (user.need_notify && user.when_notify === CommonUtils.currentHour()) {
                             const userOrders = await Models.DinnerOrderModel.findAll({where: {telegram_id: user.user_id}}) as DinnerOrderModel[];
                             const filteredUserOrders = userOrders.filter(item => {
                                 return nextDinnerDay && moment(item.order_date, "DD.MM.YYYY").diff(moment(nextDinnerDay.dinner_date), 'days') === 0;
@@ -74,6 +74,14 @@ export const i18n = require("i18n");
                             } else {
                                 LOG.info(`Крон задача. Пользователь ${user.user_id}, уже заказал обед на ${moment(nextDinnerDay.dinner_date).format("DD.MM.YYYY")}`);
                             }
+                        }
+                        if (user.need_order_notify && user.when_order_notify === CommonUtils.currentHour()) {
+                            const todayOrder = await Models.DinnerOrderModel.findOne({where: {telegram_id: user.user_id, order_date: CommonUtils.todayDate()}});
+                            let message = "На сегодня вашего заказа не нашлось, попробуйте зайти на страницу обедов";
+                            if (todayOrder) {
+                                message = `<b>Заказ на сегодня (${todayOrder.order_date}):</b>\n${todayOrder.data}`;
+                            }
+                            await DINNERBOT.sendMessageToClient(user.user_id, "Крон-задача.\n" + message);
                         }
                     }
                 }

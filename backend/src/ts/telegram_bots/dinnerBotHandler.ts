@@ -29,7 +29,7 @@ export class DinnerBotHandler extends AbstractTelegramBotHandler {
                 try {
                     this.LOG_INFO(`Обработка команды /start [id=${info.from.id}]. Начало`);
                     await this.newUser(info.from.id, info.chat.id);
-                    await this.sendMessageToClient(info.from.id, "Чем я могу вам помочь?", this.getStartMessageButtons());
+                    await this.sendMessageToClient(info.from.id, "Чем я могу вам помочь?", DinnerBotHandler.getStartMessageButtons());
                 } catch (e) {
                     this.LOG_ERROR(`Ошибка при обработке команды /start [id=${info.from.id}]`, e);
                 } finally {
@@ -127,13 +127,13 @@ export class DinnerBotHandler extends AbstractTelegramBotHandler {
             this.LOG_INFO(`Обработка callback-команды '${info.data}' [id=${telegramId}]. Начало`);
             switch (info.data) {
                 case "start":
-                    await this.bot.editMessageText("Чем я могу вам помочь?", {...messageOptions, ...this.getStartMessageButtons()});
+                    await this.bot.editMessageText("Чем я могу вам помочь?", {...messageOptions, ...DinnerBotHandler.getStartMessageButtons()});
                     break;
                 case "get_id":
                     if (!await Models.DinnerUserSettings.findOne({where: {user_id: telegramId}})) {
                         await this.newUser(telegramId, telegramId);
                     }
-                    await this.bot.editMessageText(`Ваш ID (никому не сообщайте!): <b>${telegramId}</b>`, {...messageOptions, ...this.getStartMessageButtons(), parse_mode: "HTML"});
+                    await this.sendMessageToClient(telegramId, `Ваш ID (никому не сообщайте!): <b>${telegramId}</b>`);
                     break;
                 case "today_order":
                     const todayOrder = await Models.DinnerOrderModel.findOne({where: {telegram_id: telegramId, order_date: CommonUtils.todayDate()}});
@@ -141,7 +141,7 @@ export class DinnerBotHandler extends AbstractTelegramBotHandler {
                     if (todayOrder) {
                         message = `<b>Заказ на сегодня (${todayOrder.order_date}):</b>\n${todayOrder.data}`;
                     }
-                    await this.bot.editMessageText(message, {...messageOptions, ...this.getStartMessageButtons(), parse_mode: "HTML"});
+                    await this.sendMessageToClient(telegramId, message);
                     break;
                 case "orders_history":
                     const orders = await Models.DinnerOrderModel.findAll({where: {telegram_id: telegramId}, limit: 5, order: [['id', 'DESC']]});
@@ -152,18 +152,48 @@ export class DinnerBotHandler extends AbstractTelegramBotHandler {
                             messageOrders += `<b>Заказ на ${ord.order_date}:</b>\n${ord.data}\n`;
                         }
                     }
-                    await this.bot.editMessageText(messageOrders, {...messageOptions, ...this.getStartMessageButtons(), parse_mode: "HTML"});
+                    await this.sendMessageToClient(telegramId, messageOrders);
                     break;
-                case "09":
-                case "10":
-                case "11":
+                case "notify_09":
+                case "notify_10":
+                case "notify_11":
+                    const notifyHour = info.data.substring(info.data.lastIndexOf("_") + 1);
                     const userToOn = await Models.DinnerUserSettings.findOne({where: {user_id: telegramId}});
                     if (userToOn) {
                         userToOn.need_notify = true;
-                        userToOn.when_notify = info.data;
+                        userToOn.when_notify = notifyHour;
                         await userToOn.save();
-                        this.LOG_INFO(`Для пользователя ${telegramId} включено напоминание на ${info.data}:00`);
-                        await this.bot.editMessageText("Ок, постараюсь напомнить", {...messageOptions, ...this.getStartMessageButtons()});
+                        this.LOG_INFO(`Для пользователя ${telegramId} включено напоминание на ${notifyHour}:00`);
+                        await this.bot.editMessageText("Ок, постараюсь напомнить", {...messageOptions, ...DinnerBotHandler.getStartMessageButtons()});
+                    } else {
+                        this.LOG_INFO(`Не найден профиль пользователя ${telegramId}`);
+                    }
+                    break;
+                case "order_notify_09":
+                case "order_notify_10":
+                case "order_notify_11":
+                    const orderNotifyHour = info.data.substring(info.data.lastIndexOf("_") + 1);
+                    const userToOrderNotifyOn = await Models.DinnerUserSettings.findOne({where: {user_id: telegramId}});
+                    if (userToOrderNotifyOn) {
+                        userToOrderNotifyOn.need_order_notify = true;
+                        userToOrderNotifyOn.when_order_notify = orderNotifyHour;
+                        await userToOrderNotifyOn.save();
+                        this.LOG_INFO(`Для пользователя ${telegramId} включено напоминание о заказанном обеде на ${orderNotifyHour}:00`);
+                        await this.bot.editMessageText(`Ок, буду присылать тебе твой заказ, в ${orderNotifyHour}:00`, {...messageOptions, ...DinnerBotHandler.getStartMessageButtons()});
+                    } else {
+                        this.LOG_INFO(`Не найден профиль пользователя ${telegramId}`);
+                    }
+                    break;
+                case "order_notifying":
+                    await this.bot.editMessageText("Во сколько вам присылать ваш заказ?", {...messageOptions, ...DinnerBotHandler.getOrderNotifyTimesButtons()});
+                    break;
+                case "order_notify_off":
+                    const userToOrderNotifyOff = await Models.DinnerUserSettings.findOne({where: {user_id: telegramId}});
+                    if (userToOrderNotifyOff) {
+                        userToOrderNotifyOff.need_order_notify = false;
+                        await userToOrderNotifyOff.save();
+                        this.LOG_INFO(`Для пользователя ${telegramId} посылка заказа по крон-задаче отключена`);
+                        await this.bot.editMessageText("Ок, больше не буду присылать вам ваш заказ", {...messageOptions, ...DinnerBotHandler.getStartMessageButtons()});
                     } else {
                         this.LOG_INFO(`Не найден профиль пользователя ${telegramId}`);
                     }
@@ -174,13 +204,13 @@ export class DinnerBotHandler extends AbstractTelegramBotHandler {
                         userToOff.need_notify = false;
                         await userToOff.save();
                         this.LOG_INFO(`Для пользователя ${telegramId} напоминание отключено`);
-                        await this.bot.editMessageText("Ок, больше не побеспокою", {...messageOptions, ...this.getStartMessageButtons()});
+                        await this.bot.editMessageText("Ок, больше не побеспокою", {...messageOptions, ...DinnerBotHandler.getStartMessageButtons()});
                     } else {
                         this.LOG_INFO(`Не найден профиль пользователя ${telegramId}`);
                     }
                     break;
                 case "remembering":
-                    await this.bot.editMessageText("Во сколько вам напомнить, что надо сделать заказ?", {...messageOptions, ...this.getRememberingTimesButtons()});
+                    await this.bot.editMessageText("Во сколько вам напомнить, что надо сделать заказ?", {...messageOptions, ...DinnerBotHandler.getNotifyTimesButtons()});
                     break;
                 case "no_notify_today":
                     const curDay = moment(new Date()).format('YYYY-MM-DD');
@@ -197,7 +227,7 @@ export class DinnerBotHandler extends AbstractTelegramBotHandler {
                     await this.sendMessageToClient(info.from.id, noNotifyMessage);
                     break;
                 default:
-                    await this.sendMessageToClient(info.from.id, "Чем я могу вам помочь?", this.getStartMessageButtons());
+                    await this.sendMessageToClient(info.from.id, "Чем я могу вам помочь?", DinnerBotHandler.getStartMessageButtons());
             }
         } catch (e) {
             this.LOG_ERROR(`Ошибка при обработке callback-команды '${info.data}' [id=${telegramId}]`, e)
@@ -236,7 +266,7 @@ export class DinnerBotHandler extends AbstractTelegramBotHandler {
      * Возвращает структуру кнопок напоминания
      * @return структура кнопок для бота
      */
-    private getStartMessageButtons() {
+    private static getStartMessageButtons(): TelegramBot.EditMessageTextOptions {
         return {
             reply_markup: {
                 inline_keyboard: [
@@ -246,20 +276,47 @@ export class DinnerBotHandler extends AbstractTelegramBotHandler {
                         { text: "Заказ на сегодня", callback_data: 'today_order' },
                         { text: "Мои заказы", callback_data: 'orders_history' }
                     ],
-                    [{ text: "Напоминание", callback_data: 'remembering' }]
+                    [
+                        { text: "Напоминание", callback_data: 'remembering' },
+                        { text: "Присылать заказ", callback_data: 'order_notifying' }
+                    ]
                 ]
             }
         };
     }
 
-    private getRememberingTimesButtons() {
+    /**
+     * Возвращает структуру кнопок управления посылкой заказа
+     */
+    private static getOrderNotifyTimesButtons(): TelegramBot.EditMessageTextOptions {
         return {
             reply_markup: {
                 inline_keyboard: [
                     [
-                        { text: "09:00", callback_data: '09' },
-                        { text: "10:00", callback_data: '10' },
-                        { text: "11:00", callback_data: '11' },
+                        { text: "09:00", callback_data: 'order_notify_09' },
+                        { text: "10:00", callback_data: 'order_notify_10' },
+                        { text: "11:00", callback_data: 'order_notify_11' },
+                    ],
+                    [
+                        { text: "Выключить", callback_data: 'order_notify_off' },
+                        { text: "Отмена", callback_data: 'start' }
+                    ]
+                ]
+            }
+        };
+    }
+
+    /**
+     * Возвращает структуру кнопок для напоминания о заказе обеда
+     */
+    private static getNotifyTimesButtons(): TelegramBot.EditMessageTextOptions {
+        return {
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text: "09:00", callback_data: 'notify_09' },
+                        { text: "10:00", callback_data: 'notify_10' },
+                        { text: "11:00", callback_data: 'notify_11' },
                     ],
                     [
                         { text: "Выключить", callback_data: 'remembering_off' },
@@ -270,7 +327,7 @@ export class DinnerBotHandler extends AbstractTelegramBotHandler {
         };
     }
 
-    static getNotifyMessageButtons() {
+    static getNotifyMessageButtons(): TelegramBot.EditMessageTextOptions {
         return {
             reply_markup: {
                 inline_keyboard: [

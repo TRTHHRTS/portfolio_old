@@ -81,6 +81,8 @@ export class Models {
                 chat_id: {type: STRING},
                 need_notify: {type: BOOLEAN},
                 when_notify: {type: STRING},
+                need_order_notify: {type: BOOLEAN},
+                when_order_notify: {type: STRING},
                 admin_rights: {type: BOOLEAN},
             }, {
                 timestamps: false
@@ -150,6 +152,8 @@ export interface DinnerUserModel extends Model {
     chat_id: string;
     need_notify: boolean;
     when_notify: string;
+    need_order_notify: boolean;
+    when_order_notify: string;
     admin_rights: boolean;
 }
 export interface DinnerOrderModel extends Model {
