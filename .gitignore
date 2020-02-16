@@ -2,5 +2,4 @@
 build/
 .env
 **/node_modules/
-package-lock.json
 project.log
