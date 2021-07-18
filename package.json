@@ -23,7 +23,7 @@
     "express": "~4.17.1",
     "i18n": "^0.8.3",
     "jsonwebtoken": "latest",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "moment": "^2.24.0",
     "mysql2": "^1.7.0",
     "nocache": "^2.1.0",
