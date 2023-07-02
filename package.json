@@ -24,7 +24,7 @@
     "i18n": "^0.8.3",
     "jsonwebtoken": "latest",
     "lodash": "^4.17.21",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "mysql2": "^1.7.0",
     "nocache": "^2.1.0",
     "node-persist": "^3.0.5",
